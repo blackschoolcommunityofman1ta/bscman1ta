@@ -1,26 +1,51 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-const api = (body) => fetch('/api/admin', body && { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json());
+const api = async (b) => {
+  try {
+    const r = await fetch('/api/admin', b && { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
+    return await r.json();
+  } catch { return { error: 'Gagal terhubung ke server' }; }
+};
 
 export default function Admin() {
-  const [data, setData] = useState(null), [pw, setPw] = useState('');
-  const load = () => api().then((d) => setData(d.error ? null : d));
+  const [d, setD] = useState(null), [pw, setPw] = useState(''), [tab, setTab] = useState('reports');
+  const load = () => api().then((x) => setD(x.error ? false : x));
   useEffect(() => { load(); }, []);
   const login = async () => { const r = await api({ action: 'login', password: pw }); r.error ? alert(r.error) : load(); };
-  const del = async (type, id) => { if (confirm('Hapus?')) { await api({ action: 'delete', type, id }); load(); } };
-  const ban = async (user_id) => {
-    const d = prompt('Blokir berapa hari? (kosongkan = permanen)');
-    if (d === null) return;
-    await api({ action: 'ban', user_id, days: Number(d) || null, reason: prompt('Alasan?') || '' }); load();
+  const act = async (b) => { await api(b); load(); };
+  const ban = (uid) => {
+    const n = prompt('Blokir berapa hari? (kosongkan = permanen)');
+    if (n !== null) act({ action: 'ban', user_id: uid, days: Number(n) || null, reason: prompt('Alasan?') || '' });
   };
-  if (!data) return <main><h1>Admin</h1><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" /><div className="row"><button onClick={login}>Masuk</button></div></main>;
-  const item = (type) => (x) => (
-    <div className="post" key={x.id}>
-      <span className="who">{x.anon_users?.username}</span> <span className="t">{new Date(x.created_at).toLocaleString('id-ID')}</span>
-      <p>{x.content}</p>
-      <div className="row"><button className="g" onClick={() => del(type, x.id)}>Hapus</button><button onClick={() => ban(x.user_id)}>Blokir pengguna + IP</button></div>
-    </div>
+  if (d === null) return <div className="sp" />;
+  if (!d) return (
+    <div className="pg"><h1>Masuk Admin</h1>
+      <div className="row"><input className="in" type="password" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && login()} placeholder="Password" />
+      <button className="pill" onClick={login}>Masuk</button></div></div>
   );
-  return <main><h1>Panel Admin</h1><h2>Postingan</h2>{data.posts.map(item('post'))}<h2>Komentar</h2>{data.comments.map(item('comment'))}</main>;
+  const tabs = [['reports', 'Laporan'], ['posts', 'Postingan'], ['comments', 'Komentar']];
+  return (
+    <>
+      <div className="tabs">{tabs.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l} ({d[k].length})</button>)}</div>
+      {d[tab].length === 0 && <div className="empty">Tidak ada data.</div>}
+      {d[tab].map((x) => {
+        const type = x.type || tab.slice(0, -1);
+        return (
+          <div className="post" key={type + x.id}>
+            <div className="pb">
+              <div className="ph"><b>{x.anon_users?.username}</b><span className="mut">· {new Date(x.created_at).toLocaleString('id-ID')} · {type}</span></div>
+              <p>{x.content}</p>
+              {x.reasons && <p className="mut">Dilaporkan {x.reasons.length}×: {[...new Set(x.reasons)].join(', ')}</p>}
+              <div className="row">
+                <button className="bt d" onClick={() => confirm('Hapus?') && act({ action: 'delete', type, id: x.id })}>Hapus</button>
+                <button className="bt d" onClick={() => ban(x.user_id)}>Blokir + IP</button>
+                {x.reasons && <button className="bt" onClick={() => act({ action: 'dismiss', type, id: x.id })}>Abaikan</button>}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
 }
