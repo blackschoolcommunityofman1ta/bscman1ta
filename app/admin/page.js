@@ -24,12 +24,13 @@ export default function Admin() {
       <div className="row"><input className="in" type="password" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && login()} placeholder="Password" />
       <button className="pill" onClick={login}>Masuk</button></div></div>
   );
-  const tabs = [['reports', 'Laporan'], ['posts', 'Postingan'], ['comments', 'Komentar']];
+  const tabs = [['reports', 'Laporan'], ['posts', 'Postingan'], ['comments', 'Komentar'], ['notices', 'Notice']];
   return (
     <>
       <div className="tabs">{tabs.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l} ({d[k].length})</button>)}</div>
-      {d[tab].length === 0 && <div className="empty">Tidak ada data.</div>}
-      {d[tab].map((x) => {
+      {tab === 'notices' && <Notices d={d} act={act} />}
+      {tab !== 'notices' && d[tab].length === 0 && <div className="empty">Tidak ada data.</div>}
+      {(tab === 'notices' ? [] : d[tab]).map((x) => {
         const type = x.type || tab.slice(0, -1);
         return (
           <div className="post" key={type + x.id}>
@@ -47,5 +48,16 @@ export default function Admin() {
         );
       })}
     </>
+  );
+}
+
+function Notices({ d, act }) {
+  const [t, setT] = useState('');
+  return (
+    <div className="pg">
+      <textarea style={{ border: '1px solid #2f3336', borderRadius: 8, padding: 8 }} maxLength={1000} value={t} onChange={(e) => setT(e.target.value)} placeholder="Tulis pemberitahuan untuk semua pengguna…" />
+      <div className="row"><button className="pill" disabled={!t.trim()} onClick={() => { act({ action: 'notice', content: t }); setT(''); }}>Kirim notice</button></div>
+      {d.notices.map((x) => <div className="opt" style={{ cursor: 'default' }} key={x.id}><div>{x.content}</div><button className="bt d" style={{ marginTop: 6 }} onClick={() => confirm('Hapus?') && act({ action: 'delnotice', id: x.id })}>Hapus</button></div>)}
+    </div>
   );
 }
