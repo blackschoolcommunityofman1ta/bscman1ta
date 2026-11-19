@@ -50,3 +50,11 @@ textarea{width:100%;background:none;color:var(--tx);border:0;font:inherit;font-s
 .mbd{position:fixed;inset:0;z-index:40}
 .mn{position:absolute;top:58px;right:max(10px,calc((100vw - 600px)/2 + 10px));background:#000;border:1px solid var(--line);border-radius:14px;min-width:230px;padding:6px;animation:pop .2s both;box-shadow:0 8px 30px rgba(255,255,255,.1)}
 .mn a{display:block;padding:12px 14px;color:var(--tx);text-decoration:none;border-radius:10px;font-weight:600}.mn a:hover{background:rgba(255,255,255,.08)}
+.hd{height:60px;padding-top:0;padding-bottom:0}
+.tabs{overflow-x:auto}.tabs button{flex:none;white-space:nowrap;padding:14px 16px}
+.sbw{position:sticky;top:60px;z-index:15;padding:10px 16px;background:rgba(0,0,0,.8);backdrop-filter:blur(12px)}
+.sb{display:flex;align-items:center;gap:10px;height:44px;padding:0 16px;background:var(--card);border:1px solid var(--line);border-radius:999px;color:var(--mut);transition:.15s}
+.sb:focus-within{border-color:var(--ac);color:var(--ac);background:#000}
+.sb input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--tx);font:inherit}
+.sb .ib{padding:4px;margin:0;color:var(--mut)}
+.ln{color:#1d9bf0;text-decoration:underline;background:rgba(29,155,240,.12);border-radius:4px;padding:0 2px;overflow-wrap:anywhere}.ln:hover{background:rgba(29,155,240,.25)}
