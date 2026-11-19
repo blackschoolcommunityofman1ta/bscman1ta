@@ -12,6 +12,7 @@ export default function Admin() {
   const [d, setD] = useState(null), [pw, setPw] = useState(''), [tab, setTab] = useState('reports');
   const load = () => api().then((x) => setD(x.error ? false : x));
   useEffect(() => { load(); }, []);
+  useEffect(() => { const f = () => setTab('notices'); addEventListener('admin-notice', f); return () => removeEventListener('admin-notice', f); }, []);
   const login = async () => { const r = await api({ action: 'login', password: pw }); r.error ? alert(r.error) : load(); };
   const act = async (b) => { await api(b); load(); };
   const ban = (uid) => {
