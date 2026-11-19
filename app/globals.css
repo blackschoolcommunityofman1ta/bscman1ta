@@ -44,3 +44,9 @@ textarea{width:100%;background:none;color:var(--tx);border:0;font:inherit;font-s
 @keyframes fade{from{opacity:0}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.ac{justify-content:space-between;max-width:360px}
+.ab.on{color:var(--ac)}.ab.lk.on,.ab.lk:hover{color:#f91880}.ab.lk:hover{background:rgba(249,24,128,.12)}
+.hd .ib{margin:0}
+.mbd{position:fixed;inset:0;z-index:40}
+.mn{position:absolute;top:58px;right:max(10px,calc((100vw - 600px)/2 + 10px));background:#000;border:1px solid var(--line);border-radius:14px;min-width:230px;padding:6px;animation:pop .2s both;box-shadow:0 8px 30px rgba(255,255,255,.1)}
+.mn a{display:block;padding:12px 14px;color:var(--tx);text-decoration:none;border-radius:10px;font-weight:600}.mn a:hover{background:rgba(255,255,255,.08)}
