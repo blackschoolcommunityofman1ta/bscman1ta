@@ -16,8 +16,14 @@ const ago = (d) => {
   return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 };
 const REASONS = ['Cyberbullying', 'Pornografi', 'SARA / ujaran kebencian', 'Data pribadi orang lain', 'Spam / iklan', 'Lainnya'];
-const P = { plus: 'M12 5v14M5 12h14', x: 'M6 6l12 12M18 6L6 18', chat: 'M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.6A8 8 0 1 1 21 12z', flag: 'M5 21V4m0 0h11l-2 4 2 4H5', heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z', mark: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z', share: 'M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13' };
+const P = { plus: 'M12 5v14M5 12h14', x: 'M6 6l12 12M18 6L6 18', chat: 'M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.6A8 8 0 1 1 21 12z', flag: 'M5 21V4m0 0h11l-2 4 2 4H5', heart: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z', mark: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z', share: 'M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13', search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3' };
 const LOGO = '/ikon.png';
+const URL_RE = /((?:https?:\/\/|www\.)[^\s]+)/g;
+const Text = ({ t }) => t.split(URL_RE).map((x, i) => {
+  if (i % 2 === 0) return x;
+  const m = x.match(/[.,!?;:)\]]+$/)?.[0] || '', u = m ? x.slice(0, -m.length) : x;
+  return <span key={i}><a className="ln" href={/^www\./.test(u) ? 'https://' + u : u} target="_blank" rel="noopener noreferrer nofollow">{u}</a>{m}</span>;
+});
 const NIS = /^[01239]\d0\d{3}$/;
 const Ic = ({ n, s = 20, f }) => <svg width={s} height={s} viewBox="0 0 24 24" fill={f ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={P[n]} /></svg>;
 const Avatar = ({ name = 'anonym_200', s }) => <div className={'av' + (s ? ' s' : '')} style={{ background: `hsl(${parseInt(name.slice(-3), 10) % 360} 45% 36%)` }}>A</div>;
@@ -79,7 +85,7 @@ function Comments({ postId, toast, onReport }) {
         <Avatar s name={c.anon_users?.username} />
         <div className="pb">
           <div className="ph"><b>{c.anon_users?.username}</b><span className="mut">· {ago(c.created_at)}</span></div>
-          <div className="cx">{c.content}</div>
+          <div className="cx"><Text t={c.content} /></div>
           <div className="ac">
             <button className="ab" onClick={() => setRe(c)}>Balas</button>
             <button className="ab r" aria-label="Laporkan" onClick={() => onReport({ comment_id: c.id })}><Ic n="flag" s={15} /></button>
@@ -133,10 +139,14 @@ export default function Feed({ saved, postId }) {
   const [posts, setPosts] = useState(null), [err, setErr] = useState(''), [open, setOpen] = useState(null);
   const [compose, setCompose] = useState(false), [rep, setRep] = useState(null), [msg, setMsg] = useState('');
   const [ready, setReady] = useState(false), [verify, setVerify] = useState(false), [welcome, setWelcome] = useState(false);
-  const [nt, setNt] = useState([]), [ev, setEv] = useState(null), [later, setLater] = useState(false);
+  const [nt, setNt] = useState([]), [ev, setEv] = useState(null), [later, setLater] = useState(false), [q, setQ] = useState('');
   const toast = (m) => { setMsg(m); setTimeout(() => setMsg(''), 2800); };
   const load = async () => {
-    const d = await api('/api/posts' + (postId ? '?id=' + postId : saved ? '?saved=1' : ''));
+    const qs = new URLSearchParams();
+    if (postId) qs.set('id', postId);
+    if (saved) qs.set('saved', '1');
+    if (q.trim()) qs.set('q', q.trim());
+    const d = await api('/api/posts?' + qs);
     if (d.needVerify) setVerify(true);
     else if (d.banned) setErr(d.error);
     else if (d.error) { toast(d.error); setPosts([]); }
@@ -157,6 +167,7 @@ export default function Feed({ saved, postId }) {
     addEventListener('beforeinstallprompt', bip);
     return () => removeEventListener('beforeinstallprompt', bip);
   }, []);
+  useEffect(() => { if (!ready) return; const t = setTimeout(load, 350); return () => clearTimeout(t); }, [q]);
   const react = async (p, kind) => {
     const k = kind === 'like' ? 'liked' : 'saved';
     setPosts((l) => l.map((x) => (x.id === p.id ? { ...x, [k]: !x[k], likes: kind === 'like' ? x.likes + (x.liked ? -1 : 1) : x.likes } : x)));
@@ -177,15 +188,22 @@ export default function Feed({ saved, postId }) {
   return (
     <>
       {saved && <div className="pg" style={{ paddingBottom: 0 }}><h1>Tersimpan</h1></div>}
+      {!saved && !postId && (
+        <div className="sbw"><div className="sb">
+          <Ic n="search" s={18} />
+          <input value={q} maxLength={50} onChange={(e) => setQ(e.target.value)} placeholder="Cari postingan atau anonym_123456" aria-label="Cari" />
+          {q && <button className="ib" aria-label="Hapus pencarian" onClick={() => setQ('')}><Ic n="x" s={16} /></button>}
+        </div></div>
+      )}
       {posts === null && !err && <div className="sp" />}
       {err && <div className="empty"><h2>{err}</h2></div>}
-      {posts?.length === 0 && <div className="empty">{saved ? 'Belum ada postingan tersimpan.' : 'Belum ada postingan. Tekan + untuk jadi yang pertama.'}</div>}
+      {posts?.length === 0 && <div className="empty">{q.trim() ? 'Tidak ada hasil pencarian.' : saved ? 'Belum ada postingan tersimpan.' : 'Belum ada postingan. Tekan + untuk jadi yang pertama.'}</div>}
       {posts?.map((p) => (
         <article className="post" key={p.id}>
           <Avatar name={p.anon_users?.username} />
           <div className="pb">
             <div className="ph"><b>{p.anon_users?.username}</b><span className="mut">· {ago(p.created_at)}</span></div>
-            <p>{p.content}</p>
+            <p><Text t={p.content} /></p>
             <div className="ac">
               <button className="ab" aria-label="Komentar" onClick={() => setOpen(open === p.id ? null : p.id)}><Ic n="chat" s={18} /></button>
               <button className={'ab lk' + (p.liked ? ' on' : '')} aria-label="Suka" onClick={() => react(p, 'like')}><Ic n="heart" s={18} f={p.liked} />{p.likes || ''}</button>
@@ -214,7 +232,7 @@ export default function Feed({ saved, postId }) {
       {show === 'n' && (
         <Modal onClose={() => { ls('noticeSeen', nt[0].created_at); setNt([]); }}>
           <h3>Pemberitahuan Admin</h3>
-          {nt.map((x) => <div key={x.id} className="opt" style={{ cursor: 'default' }}>{x.content}</div>)}
+          {nt.map((x) => <div key={x.id} className="opt" style={{ cursor: 'default' }}><Text t={x.content} /></div>)}
           <div className="mf"><button className="pill" onClick={() => { ls('noticeSeen', nt[0].created_at); setNt([]); }}>Mengerti</button></div>
         </Modal>
       )}
