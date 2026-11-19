@@ -12,6 +12,11 @@ export const GET = safe(async (req) => {
     .eq('is_deleted', false).gt('created_at', cutoff()).order('created_at', { ascending: false }).limit(50);
   if (id) q = q.eq('id', id);
   if (ids) q = q.in('id', ids);
+  const term = (sp.get('q') || '').trim().slice(0, 50).replace(/[%,()*"\\]/g, ' ');
+  if (term) {
+    const uids = ((await db.from('anon_users').select('id').ilike('username', `%${term}%`).limit(200)).data || []).map((u) => u.id);
+    q = q.or(`content.ilike.%${term}%${uids.length ? `,user_id.in.(${uids.join(',')})` : ''}`);
+  }
   const { data: posts, error } = await q;
   if (error) throw error;
   const pid = posts.map((p) => p.id);
